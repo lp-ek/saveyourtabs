@@ -38,7 +38,7 @@ async function saveOpenTabs() {
   tabs = await getOpenTabs();
   const d = new Date();
   let text = d.toLocaleString();
-  if (selectedText == "Bookmarks bar")
+  if (selectedText.toLowerCase() == "bookmarks bar")
     await chrome.bookmarks.create(
       {
         parentId: "1",
@@ -46,7 +46,7 @@ async function saveOpenTabs() {
       },
       newFolder
     );
-  else if (selectedText == "Other bookmarks")
+  else if (selectedText.toLowerCase() == "other bookmarks")
     await chrome.bookmarks.create(
       {
         parentId: "2",
