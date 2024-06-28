@@ -7,8 +7,7 @@ chrome.bookmarks.getTree((tree) => {
 function getBookmarksFolders(nodes) {
   for (const node of nodes) {
     if (node.children) {
-      console.log(node.title);
-
+      //console.log(node.title);
       const folderList = document.getElementById("stFolderList");
       const opt = document.createElement("option");
       opt.value = node.id;
@@ -28,7 +27,6 @@ async function newFolder(newFolder) {
       url: tab.url,
     })
   );
-  window.close();
 }
 
 async function saveOpenTabs() {
@@ -36,9 +34,10 @@ async function saveOpenTabs() {
   var selectedValue = e.value;
   var selectedText = e.options[e.selectedIndex].text;
   tabs = await getOpenTabs();
+
   const d = new Date();
   let text = d.toLocaleString();
-  if (selectedText.toLowerCase() == "bookmarks bar")
+  if (selectedText.toLowerCase() == "bookmarks bar" || selectedText.toLowerCase() == "barra de favoritos") {
     await chrome.bookmarks.create(
       {
         parentId: "1",
@@ -46,7 +45,8 @@ async function saveOpenTabs() {
       },
       newFolder
     );
-  else if (selectedText.toLowerCase() == "other bookmarks")
+  }
+  else if (selectedText.toLowerCase() == "other bookmarks" || selectedText.toLowerCase() == "outros favoritos") {
     await chrome.bookmarks.create(
       {
         parentId: "2",
@@ -54,6 +54,8 @@ async function saveOpenTabs() {
       },
       newFolder
     );
+  }
+
   else {
     await tabs.forEach((tab) =>
       chrome.bookmarks.create({
