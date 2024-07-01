@@ -1,19 +1,5 @@
-var openTabs;
 
-chrome.bookmarks.getTree(dumpTreeNodes);
-await chrome.tabs.query({
-  currentWindow: true,
-  pinned: false
-}, function (tabs) {
-
-  openTabs = tabs.filter(function (tab) {
-    return tab.url.indexOf('chrome://') === -1;
-  });
-  openTabs.forEach((element) => console.log(element.url));
-
-});
-
-function dumpTreeNodes(bookmarkNodes, deep) {
+const dumpTreeNodes = (bookmarkNodes, deep) => {
   let list = '';
   deep = deep || 0;
   for (let i = 0; i < bookmarkNodes.length; i++) {
@@ -22,7 +8,8 @@ function dumpTreeNodes(bookmarkNodes, deep) {
   document.getElementById("stFolderList").innerHTML = list;
   return list;
 };
-function dumpNode(bookmarkNode, deep) {
+
+const dumpNode = (bookmarkNode, deep) => {
   if (bookmarkNode.children) { // bookmarkNode.children.length > 0 can I get empty folder?
 
     let option = '';
@@ -36,14 +23,14 @@ function dumpNode(bookmarkNode, deep) {
   return '';
 };
 
-function buildDeepStyle(deep) {
+const buildDeepStyle = (deep) => {
   let str = '\xa0', result = '';
   deep = Math.max(deep - 1, 0) * 4;
   while (deep--) result += str;
   return result;
 };
 
-async function saveTabs(folder) {
+const saveTabs = async (folder) => {
   await openTabs.forEach((tab) =>
     chrome.bookmarks.create({
       parentId: folder.id,
@@ -52,8 +39,7 @@ async function saveTabs(folder) {
     })
   );
 }
-
-async function saveOpenTabs() {
+const saveOpenTabs = async () => {
   let e = document.getElementById("stFolderList");
   let selectedId = e.value;
   let selectedText = e.options[e.selectedIndex].text;
@@ -88,6 +74,20 @@ async function saveOpenTabs() {
   }
   window.close();
 }
+var openTabs;
+
+chrome.bookmarks.getTree(dumpTreeNodes);
+await chrome.tabs.query({
+  currentWindow: true,
+  pinned: false
+}, function (tabs) {
+
+  openTabs = tabs.filter(function (tab) {
+    return tab.url.indexOf('chrome://') === -1;
+  });
+  openTabs.forEach((element) => console.log(element.url));
+
+});
 
 
 document.getElementById("btnSaveTabs").addEventListener("click", saveOpenTabs);
