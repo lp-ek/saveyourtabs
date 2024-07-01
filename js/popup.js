@@ -1,28 +1,52 @@
-var tabs;
-chrome.bookmarks.getTree((tree) => {
-  getBookmarksFolders(tree[0].children);
+var openTabs;
+
+chrome.bookmarks.getTree(dumpTreeNodes);
+await chrome.tabs.query({
+  currentWindow: true,
+  pinned: false
+}, function (tabs) {
+
+  openTabs = tabs.filter(function (tab) {
+    return tab.url.indexOf('chrome://') === -1;
+  });
+  openTabs.forEach((element) => console.log(element.url));
+
 });
 
-// Recursively display the bookmarks
-function getBookmarksFolders(nodes) {
-  for (const node of nodes) {
-    if (node.children) {
-      //console.log(node.title);
-      const folderList = document.getElementById("stFolderList");
-      const opt = document.createElement("option");
-      opt.value = node.id;
-      opt.text = node.title;
-      folderList.add(opt, null);
-
-      getBookmarksFolders(node.children);
-    }
+function dumpTreeNodes(bookmarkNodes, deep) {
+  let list = '';
+  deep = deep || 0;
+  for (let i = 0; i < bookmarkNodes.length; i++) {
+    list += dumpNode(bookmarkNodes[i], deep);
   }
-}
+  document.getElementById("stFolderList").innerHTML = list;
+  return list;
+};
+function dumpNode(bookmarkNode, deep) {
+  if (bookmarkNode.children) { // bookmarkNode.children.length > 0 can I get empty folder?
 
-async function newFolder(newFolder) {
-  await tabs.forEach((tab) =>
+    let option = '';
+    console.log(bookmarkNode.children);
+    if (bookmarkNode.title) {
+      option = '<option value="' + bookmarkNode.id + '"' + '>' + buildDeepStyle(deep) + bookmarkNode.title + '</option>';
+    }
+    option += dumpTreeNodes(bookmarkNode.children, deep + 1);
+    return option;
+  }
+  return '';
+};
+
+function buildDeepStyle(deep) {
+  let str = '\xa0', result = '';
+  deep = Math.max(deep - 1, 0) * 4;
+  while (deep--) result += str;
+  return result;
+};
+
+async function saveTabs(folder) {
+  await openTabs.forEach((tab) =>
     chrome.bookmarks.create({
-      parentId: newFolder.id,
+      parentId: folder.id,
       title: tab.title,
       url: tab.url,
     })
@@ -30,49 +54,40 @@ async function newFolder(newFolder) {
 }
 
 async function saveOpenTabs() {
-  var e = document.getElementById("stFolderList");
-  var selectedValue = e.value;
-  var selectedText = e.options[e.selectedIndex].text;
-  tabs = await getOpenTabs();
+  let e = document.getElementById("stFolderList");
+  let selectedId = e.value;
+  let selectedText = e.options[e.selectedIndex].text;
 
   const d = new Date();
   let text = d.toLocaleString();
-  if (selectedText.toLowerCase() == "bookmarks bar" || selectedText.toLowerCase() == "barra de favoritos") {
+  console.log('text: ' + selectedText);
+  console.log('id: ' + selectedId);
+  if (selectedId == 1) { //bookmarks bar
     await chrome.bookmarks.create(
       {
         parentId: "1",
         title: "SaveYourTabs-" + text,
       },
-      newFolder
+      saveTabs
     );
   }
-  else if (selectedText.toLowerCase() == "other bookmarks" || selectedText.toLowerCase() == "outros favoritos") {
+  else if (selectedId == 2) { // other bookmarks
     await chrome.bookmarks.create(
       {
         parentId: "2",
         title: "SaveYourTabs-" + text,
       },
-      newFolder
+      saveTabs
     );
   }
-
-  else {
-    await tabs.forEach((tab) =>
-      chrome.bookmarks.create({
-        parentId: selectedValue,
-        title: tab.title,
-        url: tab.url,
-      })
-    );
+  else { // another folder selected by the user
+    let folder = {
+      id: selectedId
+    };
+    await saveTabs(folder);
   }
   window.close();
 }
 
-async function getOpenTabs() {
-  const tabs = await chrome.tabs.query({});
-  tabs.forEach((element) => console.log(element.url));
-  return tabs;
-}
 
 document.getElementById("btnSaveTabs").addEventListener("click", saveOpenTabs);
-//document.getElementById("btnCreateFolder").addEventListener("click", "");
